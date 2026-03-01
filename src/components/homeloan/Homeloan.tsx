@@ -1,4 +1,11 @@
 import { useState, useMemo } from 'react';
+import {
+    formatInputNumber,
+    parseFormattedValue,
+    formatCurrency,
+    formatTenure,
+    calculateStandardAmortization
+} from './loanUtils';
 
 const Homeloan = () => {
     // Store as formatted strings
@@ -8,118 +15,15 @@ const Homeloan = () => {
     const [monthlyPrepayment, setMonthlyPrepayment] = useState<string>('0');
     const [yearlyPrepayment, setYearlyPrepayment] = useState<string>('0');
 
-    const formatInputNumber = (value: string) => {
-        if (!value) return '';
-        const cleanValue = value.replace(/[^0-9.]/g, '');
-        const parts = cleanValue.split('.');
-        let intPart = parts[0];
-
-        if (intPart !== '') {
-            intPart = new Intl.NumberFormat('en-IN').format(Number(intPart));
-        } else if (parts.length > 1) {
-            intPart = "0";
-        }
-
-        if (parts.length > 1) {
-            return intPart + '.' + parts[1];
-        }
-        return intPart;
-    };
-
-    const parseFormattedValue = (val: string) => Number(val.replace(/,/g, '')) || 0;
-
-    const { emi, totalInterest, totalPayment, schedule } = useMemo(() => {
-        const p = parseFormattedValue(principal);
-        const r = (Number(interestRate) || 0) / 12 / 100;
-        const n = (Number(tenureYears) || 0) * 12;
-        const mPrepay = parseFormattedValue(monthlyPrepayment);
-        const yPrepay = parseFormattedValue(yearlyPrepayment);
-
-        if (p <= 0 || r <= 0 || n <= 0) {
-            return { emi: 0, totalInterest: 0, totalPayment: 0, schedule: [] };
-        }
-
-        const emiCalc = (p * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
-
-        const amortSchedule = [];
-        let currentBalance = p;
-        let actualTotalInterest = 0;
-        let actualTotalPayment = 0;
-
-        const startYear = new Date().getFullYear();
-        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-        let currentLoopYear = 1;
-
-        while (currentBalance > 0) {
-            const months = [];
-            let yearlyInterest = 0;
-            let yearlyPrincipal = 0;
-            let yearlyPrepaymentSum = 0;
-            const actualYear = startYear + (currentLoopYear - 1);
-
-            for (let month = 1; month <= 12; month++) {
-                if (currentBalance <= 0) break;
-
-                const interestForMonth = currentBalance * r;
-                const normalPrincipalForMonth = emiCalc - interestForMonth;
-                const appliedYearlyPrepay = (month === 12) ? yPrepay : 0;
-
-                let totalPrincipalForMonth = normalPrincipalForMonth + mPrepay + appliedYearlyPrepay;
-                let prepaymentForMonth = mPrepay + appliedYearlyPrepay;
-
-                if (currentBalance < totalPrincipalForMonth) {
-                    totalPrincipalForMonth = currentBalance;
-                    prepaymentForMonth = Math.max(0, currentBalance - Math.max(0, normalPrincipalForMonth));
-                }
-
-                currentBalance -= totalPrincipalForMonth;
-                if (currentBalance < 0) currentBalance = 0;
-
-                yearlyInterest += interestForMonth;
-                yearlyPrincipal += totalPrincipalForMonth;
-                yearlyPrepaymentSum += prepaymentForMonth;
-
-                actualTotalInterest += interestForMonth;
-                actualTotalPayment += (totalPrincipalForMonth + interestForMonth);
-
-                months.push({
-                    monthName: monthNames[month - 1],
-                    monthNumber: month,
-                    interest: Math.round(interestForMonth),
-                    principal: Math.round(totalPrincipalForMonth),
-                    balance: Math.round(currentBalance),
-                    hasYearlyPrepay: month === 12 && appliedYearlyPrepay > 0 && currentBalance >= 0
-                });
-            }
-
-            amortSchedule.push({
-                year: actualYear,
-                yearlyInterest: Math.round(yearlyInterest),
-                yearlyPrincipal: Math.round(yearlyPrincipal),
-                yearlyPrepayment: Math.round(yearlyPrepaymentSum),
-                endingBalance: Math.round(currentBalance),
-                months
-            });
-
-            currentLoopYear++;
-            if (currentLoopYear > 150) break;
-        }
-
-        return {
-            emi: isNaN(emiCalc) ? 0 : Math.round(emiCalc),
-            totalInterest: Math.round(actualTotalInterest),
-            totalPayment: Math.round(actualTotalPayment),
-            schedule: amortSchedule
-        };
+    const { emi, totalInterest, totalPayment, schedule, totalMonthsTaken, originalMonths } = useMemo(() => {
+        return calculateStandardAmortization(
+            parseFormattedValue(principal),
+            Number(interestRate) || 0,
+            Number(tenureYears) || 0,
+            parseFormattedValue(monthlyPrepayment),
+            parseFormattedValue(yearlyPrepayment)
+        );
     }, [principal, interestRate, tenureYears, monthlyPrepayment, yearlyPrepayment]);
-
-    const formatCurrency = (value: number) => {
-        return new Intl.NumberFormat('en-IN', {
-            style: 'currency',
-            currency: 'INR',
-            maximumFractionDigits: 0,
-        }).format(value);
-    };
 
     return (
         <div>
@@ -228,6 +132,18 @@ const Homeloan = () => {
                                         <td className="fw-semibold px-3 px-md-4 py-2 py-md-3 text-secondary">Total Amount Payable</td>
                                         <td className="px-3 px-md-4 py-2 py-md-3 fw-bold text-dark">{formatCurrency(totalPayment)}</td>
                                     </tr>
+                                    {totalMonthsTaken > 0 && totalMonthsTaken < originalMonths && (
+                                        <>
+                                            <tr>
+                                                <td className="fw-semibold px-3 px-md-4 py-2 py-md-3 text-success">Revised Tenure</td>
+                                                <td className="px-3 px-md-4 py-2 py-md-3 fw-bold text-success">{formatTenure(totalMonthsTaken)}</td>
+                                            </tr>
+                                            <tr>
+                                                <td className="fw-semibold px-3 px-md-4 py-2 py-md-3 text-success">Tenure Saved</td>
+                                                <td className="px-3 px-md-4 py-2 py-md-3 fw-bold text-success">{formatTenure(originalMonths - totalMonthsTaken)}</td>
+                                            </tr>
+                                        </>
+                                    )}
                                 </tbody>
                             </table>
                         </div>
