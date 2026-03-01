@@ -1,0 +1,134 @@
+.app-layout {
+  display: grid;
+  grid-template-areas:
+    "header header"
+    "sidebar main";
+  grid-template-columns: 260px 1fr;
+  grid-template-rows: 72px 1fr;
+  min-height: 100vh;
+  background-color: var(--bg-color);
+}
+
+/* HEADER */
+.app-header {
+  grid-area: header;
+  background-color: #ffffff;
+  border-bottom: 1px solid var(--panel-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2rem;
+  z-index: 10;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+}
+
+.logo-area {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.logo-icon {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.logo-area h1 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--primary-color);
+  letter-spacing: -0.5px;
+  margin: 0;
+}
+
+.user-btn {
+  background-color: var(--input-bg);
+  color: var(--text-active);
+  font-weight: 600;
+  padding: 0.5rem 1.25rem;
+  border-radius: 9999px;
+  border: 1px solid var(--input-border);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.user-btn:hover {
+  background-color: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+/* SIDEBAR */
+.app-sidebar {
+  grid-area: sidebar;
+  background-color: #ffffff;
+  border-right: 1px solid var(--panel-border);
+  padding: 2rem 1rem;
+}
+
+.side-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.875rem 1.25rem;
+  color: var(--text-muted);
+  text-decoration: none;
+  font-weight: 500;
+  border-radius: 12px;
+  transition: all 0.2s;
+}
+
+.menu-item:hover {
+  background-color: var(--input-bg);
+  color: var(--text-active);
+}
+
+.menu-item.active {
+  background-color: rgba(79, 70, 229, 0.1);
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+.menu-item .icon {
+  font-size: 1.25rem;
+}
+
+/* MAIN CONTENT */
+.app-main {
+  grid-area: main;
+  padding: 2.5rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.content-header h2 {
+  font-size: 2rem;
+  color: var(--text-active);
+  margin-bottom: 0.25rem;
+}
+
+.content-header p {
+  color: var(--text-muted);
+  font-size: 1.05rem;
+}
+
+@media (max-width: 768px) {
+  .app-layout {
+    grid-template-areas:
+      "header"
+      "main";
+    grid-template-columns: 1fr;
+  }
+
+  .app-sidebar {
+    display: none;
+  }
+}
