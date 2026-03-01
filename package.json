@@ -2,7 +2,7 @@
   "name": "financialinsight",
   "homepage": "https://Harsh-U-Joshi.github.io/Financial-Insight/",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",

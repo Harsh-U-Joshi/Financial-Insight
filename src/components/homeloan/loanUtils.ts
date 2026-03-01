@@ -59,6 +59,8 @@ export interface CalculationResult {
     schedule: AmortizationYear[];
     totalMonthsTaken: number;
     originalMonths: number;
+    originalTotalInterest: number;
+    interestSaved: number;
 }
 
 export const calculateStandardAmortization = (
@@ -72,10 +74,11 @@ export const calculateStandardAmortization = (
     const n = (Number(tenureYears) || 0) * 12;
 
     if (p <= 0 || r <= 0 || n <= 0) {
-        return { emi: 0, totalInterest: 0, totalPayment: 0, schedule: [], totalMonthsTaken: 0, originalMonths: 0 };
+        return { emi: 0, totalInterest: 0, totalPayment: 0, schedule: [], totalMonthsTaken: 0, originalMonths: 0, originalTotalInterest: 0, interestSaved: 0 };
     }
 
     const emiCalc = (p * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+    const originalTotalInterest = Math.round((emiCalc * n) - p);
 
     const amortSchedule: AmortizationYear[] = [];
     let currentBalance = p;
@@ -158,6 +161,8 @@ export const calculateStandardAmortization = (
         totalPayment: Math.round(actualTotalPayment),
         schedule: amortSchedule,
         totalMonthsTaken,
-        originalMonths: n
+        originalMonths: n,
+        originalTotalInterest: isNaN(originalTotalInterest) ? 0 : originalTotalInterest,
+        interestSaved: Math.round(Math.max(0, originalTotalInterest - Math.round(actualTotalInterest)))
     };
 };

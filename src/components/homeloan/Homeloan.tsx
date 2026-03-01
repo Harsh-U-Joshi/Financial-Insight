@@ -14,8 +14,7 @@ const Homeloan = () => {
     const [tenureYears, setTenureYears] = useState<string>('15');
     const [monthlyPrepayment, setMonthlyPrepayment] = useState<string>('0');
     const [yearlyPrepayment, setYearlyPrepayment] = useState<string>('0');
-
-    const { emi, totalInterest, totalPayment, schedule, totalMonthsTaken, originalMonths } = useMemo(() => {
+    const { emi, totalInterest, totalPayment, schedule, totalMonthsTaken, originalMonths, originalTotalInterest, interestSaved } = useMemo(() => {
         return calculateStandardAmortization(
             parseFormattedValue(principal),
             Number(interestRate) || 0,
@@ -112,7 +111,7 @@ const Homeloan = () => {
                             <table className="table table-bordered table-striped mb-0 align-middle h-100">
                                 <thead className="table-light">
                                     <tr>
-                                        <th colSpan={2} className="text-center py-2 py-md-3 fs-5">Calculation Results</th>
+                                        <th colSpan={2} className="text-center py-2 py-md-3 fs-5">Original Loan Quote</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -126,30 +125,65 @@ const Homeloan = () => {
                                     </tr>
                                     <tr>
                                         <td className="fw-semibold px-3 px-md-4 py-2 py-md-3 text-secondary">Total Interest</td>
-                                        <td className="px-3 px-md-4 py-2 py-md-3 fw-semibold">{formatCurrency(totalInterest)}</td>
+                                        <td className="px-3 px-md-4 py-2 py-md-3 fw-semibold">{formatCurrency(interestSaved > 0 ? originalTotalInterest : totalInterest)}</td>
                                     </tr>
                                     <tr>
                                         <td className="fw-semibold px-3 px-md-4 py-2 py-md-3 text-secondary">Total Amount Payable</td>
-                                        <td className="px-3 px-md-4 py-2 py-md-3 fw-bold text-dark">{formatCurrency(totalPayment)}</td>
+                                        <td className="px-3 px-md-4 py-2 py-md-3 fw-bold text-dark">{formatCurrency(parseFormattedValue(principal) + (interestSaved > 0 ? originalTotalInterest : totalInterest))}</td>
                                     </tr>
-                                    {totalMonthsTaken > 0 && totalMonthsTaken < originalMonths && (
-                                        <>
-                                            <tr>
-                                                <td className="fw-semibold px-3 px-md-4 py-2 py-md-3 text-success">Revised Tenure</td>
-                                                <td className="px-3 px-md-4 py-2 py-md-3 fw-bold text-success">{formatTenure(totalMonthsTaken)}</td>
-                                            </tr>
-                                            <tr>
-                                                <td className="fw-semibold px-3 px-md-4 py-2 py-md-3 text-success">Tenure Saved</td>
-                                                <td className="px-3 px-md-4 py-2 py-md-3 fw-bold text-success">{formatTenure(originalMonths - totalMonthsTaken)}</td>
-                                            </tr>
-                                        </>
-                                    )}
                                 </tbody>
                             </table>
                         </div>
                     </div>
                 </div>
             </div>
+
+            {/* Revised Calculation section when there is a prepayment */}
+            {(interestSaved > 0 || (totalMonthsTaken > 0 && totalMonthsTaken < originalMonths)) && (
+                <div className="row g-4 mt-0">
+                    <div className="col-12">
+                        <div className="card shadow-sm border-0 rounded-3 w-100 border-success border-start border-4">
+                            <div className="card-header bg-success bg-opacity-10 text-success fw-bold py-2 py-md-3 fs-5 text-center">
+                                Revised Pre-payment Savings
+                            </div>
+                            <div className="card-body">
+                                <div className="row g-3 text-center">
+                                    <div className="col-6 col-md-4">
+                                        <div className="p-3 bg-light rounded bg-opacity-50 border h-100 d-flex flex-column justify-content-center">
+                                            <div className="text-secondary small fw-semibold mb-1">Revised Total Interest</div>
+                                            <div className="fs-5 fw-bold text-dark">{formatCurrency(totalInterest)}</div>
+                                        </div>
+                                    </div>
+                                    <div className="col-6 col-md-4">
+                                        <div className="p-3 bg-light rounded bg-opacity-50 border h-100 d-flex flex-column justify-content-center">
+                                            <div className="text-secondary small fw-semibold mb-1">Revised Tenure</div>
+                                            <div className="fs-5 fw-bold text-dark">{formatTenure(totalMonthsTaken)}</div>
+                                        </div>
+                                    </div>
+                                    <div className="col-12 col-md-4">
+                                        <div className="p-3 bg-light rounded bg-opacity-50 border h-100 d-flex flex-column justify-content-center">
+                                            <div className="text-secondary small fw-semibold mb-1">Revised Total Payable</div>
+                                            <div className="fs-5 fw-bold text-dark">{formatCurrency(totalPayment)}</div>
+                                        </div>
+                                    </div>
+                                    <div className="col-6 col-md-6">
+                                        <div className="p-3 bg-success bg-opacity-10 rounded border border-success border-opacity-25 h-100 d-flex flex-column justify-content-center">
+                                            <div className="text-success small fw-semibold mb-1">Interest Saved</div>
+                                            <div className="fs-5 fw-bold text-success">{formatCurrency(interestSaved)}</div>
+                                        </div>
+                                    </div>
+                                    <div className="col-6 col-md-6">
+                                        <div className="p-3 bg-success bg-opacity-10 rounded border border-success border-opacity-25 h-100 d-flex flex-column justify-content-center">
+                                            <div className="text-success small fw-semibold mb-1">Tenure Saved</div>
+                                            <div className="fs-5 fw-bold text-success">{formatTenure(originalMonths - totalMonthsTaken)}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Amortization Schedule Accordion */}
             {schedule.length > 0 && (
